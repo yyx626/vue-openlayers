@@ -4,6 +4,7 @@
     <mouse-position></mouse-position>
     <!-- 图层切换 -->
     <layer-manage v-if="!hideLayerControl"></layer-manage>
+    <!-- 右上工具条 -->
     <tool-bar></tool-bar>
   </div>
 </template>
@@ -48,9 +49,6 @@ export default {
     initMap() {
       // 矢量底图
       this.vecLayer = new TileLayer({
-        title: '矢量地图',
-        baseLayer: true,
-        preview: 'http://lbs.tianditu.gov.cn/images/vec_c.png',
         source: new XYZ({
           url: `${MapConfig.baseURL}&T=${MapConfig.type.vecLayer}&tk=${MapConfig.tdtKey}`,
           projection: MapConfig.projection,
@@ -60,9 +58,6 @@ export default {
       })
       // 影像底图
       this.imgLayer = new TileLayer({
-        title: '影像地图',
-        baseLayer: true,
-        preview: 'http://lbs.tianditu.gov.cn/images/img_c.png',
         source: new XYZ({
           url: `${MapConfig.baseURL}&T=${MapConfig.type.imgLayer}&tk=${MapConfig.tdtKey}`,
           projection: MapConfig.projection,
@@ -72,8 +67,6 @@ export default {
       })
       // 矢量注记
       this.cvaLayer = new TileLayer({
-        name: '矢量注记',
-        preview: 'http://lbs.tianditu.gov.cn/images/cva_c.png',
         source: new XYZ({
           url: `${MapConfig.baseURL}&T=${MapConfig.type.cvaLayer}&tk=${MapConfig.tdtKey}`,
           projection: MapConfig.projection,
@@ -83,8 +76,6 @@ export default {
       })
       // 影像注记
       this.ciaLayer = new TileLayer({
-        name: '影像注记',
-        preview: 'http://lbs.tianditu.gov.cn/images/cia_c.png',
         source: new XYZ({
           url: `${MapConfig.baseURL}&T=${MapConfig.type.ciaLayer}&tk=${MapConfig.tdtKey}`,
           projection: MapConfig.projection,
