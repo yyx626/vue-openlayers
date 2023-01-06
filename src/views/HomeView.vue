@@ -1,18 +1,26 @@
 <template>
-  <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <div id="main">
+    <map-component :currentMap="currentMap" ref="getData"></map-component>
   </div>
 </template>
-
+ 
 <script>
-// @ is an alias to /src
-import HelloWorld from '@/components/HelloWorld.vue'
+import MapComponent from '@/components/GIS/MapComponent'
 
 export default {
-  name: 'HomeView',
-  components: {
-    HelloWorld
-  }
+  components: { MapComponent },
+  data() {
+    return {
+      currentMap: 2,
+    }
+  },
+  mounted() {},
 }
 </script>
+ 
+<style scoped>
+#main {
+  width: 100%;
+  height: 100%;
+}
+</style>
