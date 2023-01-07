@@ -23,7 +23,7 @@ import ToolBar from '@/components/GIS/ToolBar'
 export default {
   components: { LayerManage, MousePosition, ToolBar },
   name: 'MapComponent',
-  props: ['currentMap','hideLayerControl'],
+  props: ['currentMap', 'hideLayerControl'],
   data() {
     return {
       vecLayer: null,
@@ -122,6 +122,13 @@ export default {
     // 更新当前底图类型
     setCurrentMapType(newValue) {
       this.mapType = newValue
+    },
+    // 事件回调函数
+    callBack(type, param) {
+      // 绘制图形结束回调
+      type == 'drawend' && this.$parent.drawCallBack
+        ? this.$parent.drawCallBack(param)
+        : ''
     },
   },
   mounted() {

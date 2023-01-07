@@ -1,7 +1,7 @@
 <template>
   <!-- 地图类型面板盒子 -->
   <div class="mapTypeBox" id="id-div-all-layer">
-    <div>
+    <div class="layer-btn">
       <i class="el-icon-s-operation"></i>
     </div>
     <!-- 显示已选择的地图-->
@@ -134,10 +134,13 @@ export default {
   top: 20px;
   z-index: 200;
   cursor: pointer;
-  .el-icon-s-operation {
+  .layer-btn {
     font-size: 30px;
     font-weight: bold;
     color: #0092f1;
+  }
+  .layer-btn:hover {
+    color: black;
   }
 }
 .mapTypeBox > span {
