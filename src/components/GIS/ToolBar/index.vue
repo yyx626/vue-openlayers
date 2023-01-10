@@ -10,14 +10,17 @@
     <!-- 地形分析 -->
     <div class="dxfx-control-panel">
       <!-- 选择分析类型 -->
-      <el-radio-group v-model="dxfxType" @change="dxfxTypeChange">
-        <el-radio :label="1">等高线分析</el-radio>
-        <el-radio :label="2">坡度分析</el-radio>
-        <el-radio :label="3">坡向分析</el-radio>
-        <el-radio :label="4">地形因子</el-radio>
-        <el-radio :label="5">视线分析</el-radio>
-        <el-radio :label="6">视域分析</el-radio>
+      <el-radio-group v-model="dxfxType" @change="dxfxTypeChange" size="small">
+        <el-radio-button :label="1">等高线分析</el-radio-button>
+        <el-radio-button :label="2">坡度分析</el-radio-button>
+        <el-radio-button :label="3">坡向分析</el-radio-button>
+        <el-radio-button :label="4">地形因子</el-radio-button>
+        <el-radio-button :label="5">视线分析</el-radio-button>
+        <el-radio-button :label="6">视域分析</el-radio-button>
       </el-radio-group>
+      <!-- <el-row>
+        <el-col :span=""></el-col>
+      </el-row> -->
       <!-- 选择绘制类型 -->
       <el-select
         v-model="selectDrawType"
@@ -67,16 +70,34 @@
     <!-- 地形分析结果展示图例 -->
     <div class="dxfx-legend-panel">
       <el-row class="dxfx-legend-header">
-        <el-col>
-          <span>{{ legendTitle + '-信息面板' }}</span>
+        <el-col :span="2"
+          ><i class="el-icon-close" @click="hideLegend"></i
+        ></el-col>
+        <el-col :span="8">
+          <span style="margin-right: 8px">{{ legendTitle }}</span>
+        </el-col>
+        <el-col :span="14">
+          <span style="margin-right: -90px">信息面板</span>
         </el-col>
       </el-row>
-      <el-row class="dxfx-legend-body">
-        <el-col>sfds</el-col>
-        <el-col>sfds</el-col>
-        <el-col>sfds</el-col>
+      <el-row>
+        <el-divider content-position="left">分析说明</el-divider>
+        <el-col :span="24">
+          <span>{{ dxfxDescription }}</span>
+        </el-col>
+      </el-row>
+      <el-row>
+        <el-divider content-position="left">图例说明</el-divider>
+        <el-col class="dxfx-legend-tlsm"> </el-col>
       </el-row>
     </div>
+    <el-button
+      class="dxfx-legend-btn"
+      type="primary"
+      icon="el-icon-message"
+      circle
+      @click="openDxfxLegend"
+    ></el-button>
     <!-- 测量 -->
     <div class="cl-control-panel">
       <el-radio-group v-model="measureType">
@@ -185,7 +206,7 @@ export default {
       gpStyles: {
         Point: new Style({
           image: new Icon({
-            src: 'https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png',
+            src: require('@/assets/img/mark_b.png'),
             anchor: [0.5, 1],
           }),
         }),
@@ -227,6 +248,7 @@ export default {
         }),
       },
       legendTitle: null,
+      dxfxDescription: null,
     }
   },
   methods: {
@@ -246,6 +268,8 @@ export default {
       switch (type) {
         case 1:
           $('.dxfx-control-panel').hide()
+          $('.dxfx-legend-panel').hide()
+          $('.dxfx-legend-btn').hide()
           break
         case 2:
           $('.cl-control-panel').hide()
@@ -253,6 +277,10 @@ export default {
         default:
           break
       }
+    },
+    hideLegend() {
+      $('.dxfx-legend-panel').hide(350)
+      $('.dxfx-legend-btn').show()
     },
     showPanel(lx) {
       switch (lx) {
@@ -430,7 +458,7 @@ export default {
       if (type == 1) {
         return new Style({
           image: new Icon({
-            src: 'https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png',
+            src: require('@/assets/img/mark_b.png'),
             anchor: [0.5, 1],
           }),
         })
@@ -515,6 +543,8 @@ export default {
       switch (this.dxfxType) {
         case 1: // 提取等高线
           style.getText().setText(feature.getProperties().value.toString())
+          style.getStroke().setColor('orange')
+          style.getStroke().setWidth(1)
           break
         case 2: // 坡度分析
           let val = feature.getProperties().gridCode
@@ -622,7 +652,6 @@ export default {
           style.getText().setText(ifViewLine)
           break
         case 6: // 视域分析
-          // gridCode
           if (feature.getProperties().gridCode == 0) {
             style.getFill().setColor([229, 9, 42, 0.5])
           } else {
@@ -664,10 +693,10 @@ export default {
       this.addResToLayer(result)
       // 构造图例
       let pxObj = ['等高线']
-      let otherColorList = ['orange']
+      var otherColorList = ['orange']
       let tlOptions = new Array()
       for (let k in otherColorList) {
-        if (k != undefined) {
+        if (k != 'unique') {
           let o = { color: otherColorList[k], text: pxObj[k], id: 'pdfxtl' + k }
           tlOptions.push(o)
         }
@@ -677,31 +706,129 @@ export default {
     },
     showSlopeRes(result) {
       this.addResToLayer(result)
+      // 构造图例
+      let tlOptions = new Array()
+      let obj = { start: 1, end: 11 }
+      let pxObj = [
+        '0',
+        '0-10',
+        '10-20',
+        '20-30',
+        '30-40',
+        '40-50',
+        '50-60',
+        '60-70',
+        '70-80',
+        '80-90',
+        '90',
+      ]
+      let otherColorList = this.getColorList(obj)
+      for (let k in otherColorList) {
+        if (k != 'unique') {
+          let o = { color: otherColorList[k], text: pxObj[k], id: 'pdfxtl' + k }
+          tlOptions.push(o)
+        }
+      }
+      var tmOptions = { title: '坡度分析', ms: '坡度分析[单位：度]' }
+      this.showLegendPanel(tmOptions, tlOptions)
     },
     showAspectRes(result) {
       this.addResToLayer(result)
+      // 构造图例
+      let tlOptions = new Array()
+      let obj = { start: 1, end: 9 }
+      let pxObj = [
+        '北坡',
+        '东北坡',
+        '东坡',
+        '东南坡',
+        '南坡',
+        '西南坡',
+        '西坡',
+        '西北坡',
+        '平坦地区',
+      ]
+      let otherColorList = this.getColorList(obj)
+      for (let k in otherColorList) {
+        if (k != 'unique') {
+          let o = { color: otherColorList[k], text: pxObj[k], id: 'pdfxtl' + k }
+          tlOptions.push(o)
+        }
+      }
+      var tmOptions = { title: '坡向分析', ms: '坡向分析按八个方向的方式显示' }
+      this.showLegendPanel(tmOptions, tlOptions)
     },
     showLineOfSightRes(result) {
       this.addResToLayer(result)
+      let tlOptions = new Array()
+      let pxObj = ['可见', '不可见']
+      let otherColorList = ['green', 'red']
+      for (let k in otherColorList) {
+        if (k != 'unique') {
+          let o = { color: otherColorList[k], text: pxObj[k], id: 'pdfxtl' + k }
+          tlOptions.push(o)
+        }
+      }
+      var tmOptions = { title: '视线分析', ms: '视线分析' }
+      this.showLegendPanel(tmOptions, tlOptions)
     },
     showViewShedRes(result) {
-      result = result.push(this.pointFeatureArray[0])
       this.addResToLayer(result)
+      // 显示观察点
+      this.showObservePoint()
+      // 构造图例
+      let tlOptions = new Array()
+      let pxObj = ['可见', '不可见']
+      let otherColorList = ['green', 'red']
+      for (let k in otherColorList) {
+        if (k != 'unique') {
+          let o = { color: otherColorList[k], text: pxObj[k], id: 'pdfxtl' + k }
+          tlOptions.push(o)
+        }
+      }
+      var tmOptions = { title: '视域分析', ms: '视域分析' }
+      this.showLegendPanel(tmOptions, tlOptions)
+    },
+    showObservePoint() {
+      this.pointFeatureArray[0].setStyle(
+        new Style({
+          image: new Icon({
+            src: require('@/assets/img/observe.png'),
+            anchor: [0.5, 1],
+          }),
+        })
+      )
+      this.gpSource.addFeature(this.pointFeatureArray[0])
     },
     clear() {
       this.layer.getSource().clear()
       if (this.gpSource != null) this.gpSource.clear()
       this.pointFeatureArray = []
       this.viewShedFeatureArray = []
+      this.hideLegend()
+      $('.dxfx-legend-btn').hide()
     },
     clearGp() {
       if (this.gpSource != null) this.gpSource.clear()
-      this.clear() //清除绘制
+      this.layer.getSource().clear() //清除绘制
       // 打开图例
     },
+    openDxfxLegend() {
+      $('.dxfx-legend-panel').show(350)
+      $('.dxfx-legend-btn').hide()
+    },
     showLegendPanel(tmOptions, tlOptions) {
-      // $('.dxfx-legend-panel').show(350)
+      $('.dxfx-legend-panel').show(350)
       this.legendTitle = tmOptions.title
+      this.dxfxDescription = tmOptions.ms
+      $('.dxfx-legend-tlsm').html('')
+      tlOptions.forEach((v, i) => {
+        let divStr = `<div style="display:flex;margin-top:2px;margin-left:40px">
+                        <div style="width:35px;height:20px;background-color:${v.color}"></div>
+                        <span style="margin-left:20px">${v.text}</span>
+                      </div>`
+        $('.dxfx-legend-tlsm').append(divStr)
+      })
     },
     measure() {},
   },
@@ -729,7 +856,7 @@ export default {
   padding-top: 30px;
   padding-bottom: 30px;
   width: 100%;
-  background: rgba($color: #ffffff, $alpha: 0.85);
+  background: rgba($color: #ffffff, $alpha: 0.9);
   box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.3);
   border-radius: 6px;
   z-index: 5;
@@ -741,7 +868,7 @@ export default {
   padding-top: 30px;
   padding-bottom: 30px;
   width: 100%;
-  background: rgba($color: #ffffff, $alpha: 0.85);
+  background: rgba($color: #ffffff, $alpha: 0.9);
   box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.3);
   border-radius: 6px;
   z-index: 5;
@@ -762,13 +889,23 @@ export default {
 .dxfx-legend-panel {
   padding: 10px;
   position: absolute;
-  width: 300px;
+  width: 280px;
   bottom: -760px;
   right: 0;
-  background: #ffffff;
+  background: rgba($color: #ffffff, $alpha: 0.9);
   box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.3);
   border-radius: 6px;
   z-index: 5;
   display: none;
+}
+.dxfx-legend-btn {
+  position: absolute;
+  bottom: -760px;
+  right: 0;
+  z-index: 4;
+  display: none;
+}
+.el-icon-close {
+  cursor: pointer;
 }
 </style>
