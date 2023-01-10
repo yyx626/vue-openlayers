@@ -2,8 +2,8 @@
   <div class="wrapDiv">
     <!-- 工具条 -->
     <el-button-group class="toolBarBox">
-      <el-button icon="el-icon-edit" @click="hidePanel(1)">地形分析</el-button>
-      <el-button icon="el-icon-edit" @click="hidePanel(2)">测量</el-button>
+      <el-button icon="el-icon-edit" @click="showPanel(1)">地形分析</el-button>
+      <el-button icon="el-icon-edit" @click="showPanel(2)">测量</el-button>
       <el-button icon="el-icon-delete" @click="clear">清空</el-button>
     </el-button-group>
 
@@ -64,9 +64,19 @@
       >
       </el-switch>
     </div>
-
     <!-- 地形分析结果展示图例 -->
-    
+    <div class="dxfx-legend-panel">
+      <el-row class="dxfx-legend-header">
+        <el-col>
+          <span>{{ legendTitle + '-信息面板' }}</span>
+        </el-col>
+      </el-row>
+      <el-row class="dxfx-legend-body">
+        <el-col>sfds</el-col>
+        <el-col>sfds</el-col>
+        <el-col>sfds</el-col>
+      </el-row>
+    </div>
     <!-- 测量 -->
     <div class="cl-control-panel">
       <el-radio-group v-model="measureType">
@@ -108,7 +118,7 @@
 import $ from 'jquery'
 import VectorLayer from 'ol/layer/Vector'
 import VectorSource from 'ol/source/Vector'
-import { Style, Icon } from 'ol/style'
+import { Style, Icon, Stroke, Fill, Text } from 'ol/style'
 import { Draw } from 'ol/interaction'
 import { unByKey } from 'ol/Observable'
 import { createBox, createRegularPolygon } from 'ol/interaction/Draw'
@@ -117,15 +127,17 @@ import { gpService } from '@/api/gpService'
 export default {
   name: 'ToolBar',
   watch: {
-    currentTool(current) {
-      // this.hidePanel(current)
-      console.log(current)
+    currentTool(current, old) {
+      old ? this.hidePanel(old) : ''
     },
   },
   data() {
     return {
       MapObject: null,
       currentTool: null,
+      layer: null,
+      gpSource: null,
+      gpLayer: null,
       measureType: 1,
       dxfxType: null,
       showViewShed: false,
@@ -164,13 +176,57 @@ export default {
       paramsObj: {},
       selectDrawType: null,
       drawType: null,
-      layer: null,
       drawControl: null,
       sketch: null,
       drawRes: {},
       listener: null,
       clearLast: false,
       geoJsonObj: new GeoJSON(),
+      gpStyles: {
+        Point: new Style({
+          image: new Icon({
+            src: 'https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png',
+            anchor: [0.5, 1],
+          }),
+        }),
+        LineString: new Style({
+          stroke: new Stroke({
+            color: 'orange',
+            width: 1,
+          }),
+          text: new Text({
+            offsetX: 0,
+            offsetY: 0,
+            textAlign: 'center',
+            text: '',
+          }),
+        }),
+        Polygon: new Style({
+          stroke: new Stroke({
+            color: 'rgba(255,255,255,0.2)',
+            width: 0.5,
+          }),
+          text: new Text({
+            offsetX: 0,
+            offsetY: 0,
+            textAlign: 'center',
+            text: '',
+          }),
+          fill: new Fill({
+            color: 'rgba(0,0,255,0.1)',
+          }),
+        }),
+        Circle: new Style({
+          stroke: new Stroke({
+            color: 'red',
+            width: 1,
+          }),
+          fill: new Fill({
+            color: 'rgba(255,0,0,0.2)',
+          }),
+        }),
+      },
+      legendTitle: null,
     }
   },
   methods: {
@@ -189,26 +245,27 @@ export default {
     hidePanel(type) {
       switch (type) {
         case 1:
-          $('.dxfx-control-panel').animate({ height: 'toggle' }, 150)
-          this.currentTool = 1
+          $('.dxfx-control-panel').hide()
           break
         case 2:
-          $('.cl-control-panel').animate({ height: 'toggle' }, 150)
-          this.currentTool = 2
+          $('.cl-control-panel').hide()
           break
         default:
           break
       }
     },
-    showDxfxPanel() {
-      this.currentTool ? this.hidePanel(this.currentTool) : ''
-      this.currentTool = 1
-      $('.dxfx-control-panel').animate({ height: 'toggle' }, 150)
-    },
-    showClPanel() {
-      this.currentTool ? this.hidePanel(this.currentTool) : ''
-      this.currentTool = 2
-      $('.cl-control-panel').animate({ height: 'toggle' }, 150)
+    showPanel(lx) {
+      switch (lx) {
+        case 1:
+          $('.dxfx-control-panel').animate({ height: 'toggle' }, 150)
+          break
+        case 2:
+          $('.cl-control-panel').animate({ height: 'toggle' }, 150)
+          break
+        default:
+          break
+      }
+      this.currentTool = lx
     },
     setDxfxDrawType(dxfxType) {
       if (dxfxType == 1) {
@@ -320,6 +377,7 @@ export default {
           freehand: type == 6 ? true : false,
           geometryFunction:
             type == 4 ? createBox() : type == 3 ? createRegularPolygon(0) : '',
+          maxPoints: type == 2 && this.currentTool == 1 ? 2 : '',
         })
         this.MapObject.addInteraction(this.drawControl)
         this.drawControl.on('drawstart', (evt) => {
@@ -384,7 +442,13 @@ export default {
       this.paramsObj.pointStr = `${
         data.feature.getGeometry().getCoordinates()[0]
       },${data.feature.getGeometry().getCoordinates()[1]}`
-      // this.paramsObj.lineCoordinates =
+      this.drawType == 2
+        ? (this.paramsObj.lineCoordinates = `${
+            data.feature.getGeometry().getCoordinates()[0][0]
+          },${data.feature.getGeometry().getCoordinates()[0][1]},${
+            data.feature.getGeometry().getCoordinates()[1][0]
+          },${data.feature.getGeometry().getCoordinates()[1][1]}`)
+        : ''
       this.paramsObj.viewPoint = this.pointFeatureArray[0]
         ? `${this.pointFeatureArray[0].getGeometry().getCoordinates()[0]},${
             this.pointFeatureArray[0].getGeometry().getCoordinates()[1]
@@ -400,18 +464,246 @@ export default {
       if (this.currentTool == 1) {
         this.getGpParamsObj(data)
         gpService(this.dxfxType, this.paramsObj, (res) => {
-          console.log(res)
+          if (res) {
+            let fs = this.geoJsonObj.readFeatures(res)
+            switch (this.dxfxType) {
+              case 1:
+                this.showContourRes(fs)
+                break
+              case 2:
+                this.showSlopeRes(fs)
+                break
+              case 3:
+                this.showAspectRes(fs)
+                break
+              case 4:
+                // 地形因子
+                break
+              case 5:
+                this.showLineOfSightRes(fs)
+                break
+              case 6:
+                this.showViewShedRes(fs)
+                break
+              default:
+                break
+            }
+          }
         })
       } else if (this.currentTool == 2) {
         // 测量
       }
     },
-    measure() {},
+    addResToLayer(result) {
+      this.clearGp()
+      if (this.gpSource == null) {
+        this.gpSource = new VectorSource({
+          features: result,
+          wrapX: false,
+        })
+        this.gpLayer = new VectorLayer({
+          source: this.gpSource,
+          style: this.gpStyleFunction,
+        })
+        this.MapObject.addLayer(this.gpLayer)
+      } else {
+        this.gpSource.addFeatures(result)
+      }
+    },
+    gpStyleFunction(feature) {
+      var style = this.gpStyles[feature.getGeometry().getType()]
+      switch (this.dxfxType) {
+        case 1: // 提取等高线
+          style.getText().setText(feature.getProperties().value.toString())
+          break
+        case 2: // 坡度分析
+          let val = feature.getProperties().gridCode
+          let obj = { start: 1, end: 11 }
+          let colorList = this.getColorList(obj)
+          let color
+          let text = ''
+          if (val == 0) {
+            color = colorList[0]
+            text = '0'
+          } else if (val <= 10) {
+            color = colorList[1]
+            text = '0-10'
+          } else if (val <= 20) {
+            color = colorList[2]
+            text = '10-20'
+          } else if (val <= 30) {
+            color = colorList[3]
+            text = '20-30'
+          } else if (val <= 40) {
+            color = colorList[4]
+            text = '30-40'
+          } else if (val <= 50) {
+            color = colorList[5]
+            text = '40-50'
+          } else if (val <= 60) {
+            color = colorList[6]
+            text = '50-60'
+          } else if (val <= 70) {
+            color = colorList[7]
+            text = '60-70'
+          } else if (val <= 80) {
+            color = colorList[8]
+            text = '70-80'
+          } else if (val <= 90) {
+            color = colorList[9]
+            text = '80-90'
+          } else {
+            color = colorList[10]
+            text = '其他'
+          }
+          text = '坡度: '
+          let c = color
+            .split('rgb')[1]
+            .replace('(', '')
+            .replace(')', '')
+            .split(',') // [229,9,42,0.5]
+          c = [c[0], c[1], c[2], 0.6]
+          style.getFill().setColor(c)
+          break
+        case 3: // 坡向分析
+          let val1 = feature.getProperties().gridCode
+          let text1 = ''
+          let obj1 = { start: 1, end: 9 }
+          let colorList1 = this.getColorList(obj1)
+          let color1
+          if ((val1 > 0 && val1 <= 22.5) || (val1 > 337.5 && val1 <= 360)) {
+            color1 = colorList1[0]
+            text1 = '北坡'
+          } else if (val1 > 22.5 && val1 <= 67.5) {
+            color1 = colorList1[1]
+            text1 = '东北坡'
+          } else if (val1 > 67.5 && val1 <= 112.5) {
+            color1 = colorList1[2]
+            text1 = '东坡'
+          } else if (val1 > 112.5 && val1 <= 157.5) {
+            color1 = colorList1[3]
+            text1 = '东南坡'
+          } else if (val1 > 157.5 && val1 <= 202.5) {
+            color1 = colorList1[4]
+            text1 = '南坡'
+          } else if (val1 > 202.5 && val1 <= 247.5) {
+            color1 = colorList1[5]
+            text1 = '西南坡'
+          } else if (val1 > 247.5 && val1 <= 292.5) {
+            color1 = colorList1[6]
+            text1 = '西坡'
+          } else if (val1 > 292.5 && val1 <= 337.5) {
+            color1 = colorList1[7]
+            text1 = '西北坡'
+          } else {
+            color1 = colorList1[8]
+            text1 = '平坦地区'
+          }
+          let c1 = color1
+            .split('rgb')[1]
+            .replace('(', '')
+            .replace(')', '')
+            .split(',') // [229,9,42,0.5]
+          c1 = [c1[0], c1[1], c1[2], 0.5]
+          style.getFill().setColor(c1)
+          break
+        case 4: // 地形因子
+          break
+        case 5: // 视线分析
+          let ifViewLine = ''
+          if (feature.getProperties().visCode == 2) {
+            style.getStroke().setColor([229, 9, 42, 0.5])
+            ifViewLine = '不可见'
+          } else {
+            style.getStroke().setColor([25, 234, 20, 0.5])
+            ifViewLine = '可见'
+          }
+          style.getStroke().setWidth(3)
+          style.getText().setText(ifViewLine)
+          break
+        case 6: // 视域分析
+          // gridCode
+          if (feature.getProperties().gridCode == 0) {
+            style.getFill().setColor([229, 9, 42, 0.5])
+          } else {
+            style.getFill().setColor([25, 234, 20, 0.5])
+          }
+          break
+        default:
+          break
+      }
+      return style
+    },
+    getColorList(rules) {
+      let color = [
+        'rgb(205,101,82)',
+        'rgb(79,228,18)',
+        'rgb(42,236,199)',
+        'rgb(72,113,9)',
+        'rgb(21,89,236)',
+        'rgb(124,21,236)',
+        'rgb(126,95,105)',
+        'rgb(236,21,86)',
+        'rgb(144,141,84)',
+        'rgb(74,97,95)',
+        'rgb(29,28,27)',
+        'rgb(227,250,21)',
+      ]
+      if (typeof rules == undefined || rules == '' || rules == null)
+        return color
+      let start = rules.start
+      let end = rules.end
+      let result = new Array()
+      for (let i = start - 1; i <= end - 1; i++) {
+        result.push(color[i])
+      }
+      return result
+    },
+    showContourRes(result) {
+      // 添加分析结果到GP图层
+      this.addResToLayer(result)
+      // 构造图例
+      let pxObj = ['等高线']
+      let otherColorList = ['orange']
+      let tlOptions = new Array()
+      for (let k in otherColorList) {
+        if (k != undefined) {
+          let o = { color: otherColorList[k], text: pxObj[k], id: 'pdfxtl' + k }
+          tlOptions.push(o)
+        }
+      }
+      var tmOptions = { title: '等高线分析', ms: '等高线分析[单位：米]' }
+      this.showLegendPanel(tmOptions, tlOptions)
+    },
+    showSlopeRes(result) {
+      this.addResToLayer(result)
+    },
+    showAspectRes(result) {
+      this.addResToLayer(result)
+    },
+    showLineOfSightRes(result) {
+      this.addResToLayer(result)
+    },
+    showViewShedRes(result) {
+      result = result.push(this.pointFeatureArray[0])
+      this.addResToLayer(result)
+    },
     clear() {
       this.layer.getSource().clear()
+      if (this.gpSource != null) this.gpSource.clear()
       this.pointFeatureArray = []
       this.viewShedFeatureArray = []
     },
+    clearGp() {
+      if (this.gpSource != null) this.gpSource.clear()
+      this.clear() //清除绘制
+      // 打开图例
+    },
+    showLegendPanel(tmOptions, tlOptions) {
+      // $('.dxfx-legend-panel').show(350)
+      this.legendTitle = tmOptions.title
+    },
+    measure() {},
   },
   mounted() {
     this.init()
@@ -432,22 +724,24 @@ export default {
   box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.3);
 }
 .dxfx-control-panel {
+  position: absolute;
   margin-top: 10px;
   padding-top: 30px;
   padding-bottom: 30px;
   width: 100%;
-  background: #ffffff;
+  background: rgba($color: #ffffff, $alpha: 0.85);
   box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.3);
   border-radius: 6px;
   z-index: 5;
   display: none;
 }
 .cl-control-panel {
+  position: absolute;
   margin-top: 10px;
   padding-top: 30px;
   padding-bottom: 30px;
   width: 100%;
-  background: #ffffff;
+  background: rgba($color: #ffffff, $alpha: 0.85);
   box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.3);
   border-radius: 6px;
   z-index: 5;
@@ -464,5 +758,17 @@ export default {
 }
 .viewShedBox {
   margin-top: 15px;
+}
+.dxfx-legend-panel {
+  padding: 10px;
+  position: absolute;
+  width: 300px;
+  bottom: -760px;
+  right: 0;
+  background: #ffffff;
+  box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  z-index: 5;
+  display: none;
 }
 </style>

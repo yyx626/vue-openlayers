@@ -47,7 +47,7 @@ function getParamsObj(type, params) {
       break;
     case 4: paramsObj.point = params.pointStr
       break;
-    case 5: paramsObj.lineCoordinates = params.pointCoordStr
+    case 5: paramsObj.lineCoordinates = params.lineCoordinates
       break;
     case 6: paramsObj.geoJson = params.viewShedGeojson
       paramsObj.viewPoint = params.viewPoint
