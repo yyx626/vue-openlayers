@@ -2,7 +2,7 @@ import $ from 'jquery'
 import { Loading } from 'element-ui';
 import { Message } from 'element-ui';
 // 请求地址
-const baseURL = 'http://127.0.0.1:8080/geoTools'
+const baseURL = 'http://127.0.0.1:6007/geoTools'
 
 let loading;
 function createLoading(text) {
