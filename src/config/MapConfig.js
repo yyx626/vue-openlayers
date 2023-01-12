@@ -10,9 +10,9 @@ export default class MapConfig {
     ciaLayer: 'cia_c'  // 影像注记
   }
   // 初始化缩放层级
-  static initZoom = 14;
+  static initZoom = 15;
   // 初始化定位中心
-  static initCenter = [117.148,31.843];//[122.177343, 41.128599];
+  static initCenter = [117.169,31.843];//[122.177343, 41.128599];
   // 投影
   static projection = 'EPSG:4326';
 
