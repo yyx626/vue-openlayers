@@ -2,14 +2,16 @@
   <div class="wrapDiv">
     <!-- 工具条 -->
     <el-button-group class="toolBarBox">
-      <el-button icon="el-icon-edit" @click="showPanel(1)">Terrain analysis</el-button>
+      <el-button icon="el-icon-edit" @click="showPanel(1)"
+        >Terrain analysis</el-button
+      >
       <el-button icon="el-icon-edit" @click="showPanel(2)">Measure</el-button>
       <el-button icon="el-icon-delete" @click="clear">clear</el-button>
     </el-button-group>
 
     <!-- 地形分析 -->
     <div class="dxfx-control-panel">
-      <div style="margin-bottom: 10px;">Select anaysis type</div>
+      <div style="margin-bottom: 10px">Select anaysis type</div>
       <!-- 选择分析类型 -->
       <el-radio-group v-model="dxfxType" @change="dxfxTypeChange" size="small">
         <el-radio-button :label="1">Contour</el-radio-button>
@@ -165,7 +167,7 @@ export default {
       showViewShed: false,
       showInterval: false,
       isStartDraw: true,
-      contourInterval: 20,
+      contourInterval: null,
       pointFeatureArray: [],
       viewShedFeatureArray: [],
       tempDrawTypeArray: [],
@@ -227,6 +229,13 @@ export default {
             offsetY: 0,
             textAlign: 'center',
             text: '',
+            fill: new Fill({
+              color: 'white',
+            }),
+            stroke: new Stroke({
+              color: 'black',
+              width: 2,
+            }),
           }),
         }),
         Polygon: new Style({
@@ -462,7 +471,7 @@ export default {
       })
     },
     getStyle(type) {
-      if (type == 1&& this.dxfxType ==4) {
+      if (type == 1 && this.dxfxType == 4) {
         return new Style({
           image: new Icon({
             src: require('@/assets/img/mark_b.png'),
@@ -920,7 +929,7 @@ export default {
 .dxfx-legend-panel {
   padding: 10px;
   position: absolute;
-  width: 340px;//280px;
+  width: 340px; //280px;
   bottom: -760px;
   right: 0;
   background: rgba($color: #ffffff, $alpha: 0.9);
