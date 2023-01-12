@@ -9,6 +9,7 @@
 
     <!-- 地形分析 -->
     <div class="dxfx-control-panel">
+      <div style="margin-bottom: 10px;">Select anaysis type</div>
       <!-- 选择分析类型 -->
       <el-radio-group v-model="dxfxType" @change="dxfxTypeChange" size="small">
         <el-radio-button :label="1">Contour</el-radio-button>
@@ -461,7 +462,7 @@ export default {
       })
     },
     getStyle(type) {
-      if (type == 1) {
+      if (type == 1&& this.dxfxType ==4) {
         return new Style({
           image: new Icon({
             src: require('@/assets/img/mark_b.png'),
@@ -735,7 +736,7 @@ export default {
           tlOptions.push(o)
         }
       }
-      var tmOptions = { title: 'Slope', ms: 'Slope Analysis[unit: degree]' }
+      var tmOptions = { title: 'Slope', ms: 'Slope Analysis [unit: degree]' }
       this.showLegendPanel(tmOptions, tlOptions)
     },
     showAspectRes(result) {
@@ -822,7 +823,7 @@ export default {
         new Style({
           image: new Icon({
             src: require('@/assets/img/observe.png'),
-            anchor: [0.5, 1],
+            anchor: [0.5, 0.5],
           }),
         })
       )
