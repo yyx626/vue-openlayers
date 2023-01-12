@@ -15,7 +15,7 @@
       >
         <img src="http://lbs.tianditu.gov.cn/images/img_c.png" />
         <div class="typeWordBox">
-          <label class="typxWord" id="yxWord">影像底图</label>
+          <label class="typxWord" id="yxWord">image</label>
         </div>
       </div>
     </span>
@@ -31,7 +31,7 @@
       >
         <img src="http://lbs.tianditu.gov.cn/images/vec_c.png" />
         <div class="typeWordBox">
-          <label class="typxWord" id="slWord">矢量底图</label>
+          <label class="typxWord" id="slWord">vector</label>
         </div>
       </div>
     </span>

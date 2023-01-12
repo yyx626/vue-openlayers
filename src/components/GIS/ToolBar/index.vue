@@ -2,21 +2,21 @@
   <div class="wrapDiv">
     <!-- 工具条 -->
     <el-button-group class="toolBarBox">
-      <el-button icon="el-icon-edit" @click="showPanel(1)">地形分析</el-button>
-      <el-button icon="el-icon-edit" @click="showPanel(2)">测量</el-button>
-      <el-button icon="el-icon-delete" @click="clear">清空</el-button>
+      <el-button icon="el-icon-edit" @click="showPanel(1)">Terrain analysis</el-button>
+      <el-button icon="el-icon-edit" @click="showPanel(2)">Measure</el-button>
+      <el-button icon="el-icon-delete" @click="clear">clear</el-button>
     </el-button-group>
 
     <!-- 地形分析 -->
     <div class="dxfx-control-panel">
       <!-- 选择分析类型 -->
       <el-radio-group v-model="dxfxType" @change="dxfxTypeChange" size="small">
-        <el-radio-button :label="1">等高线分析</el-radio-button>
-        <el-radio-button :label="2">坡度分析</el-radio-button>
-        <el-radio-button :label="3">坡向分析</el-radio-button>
-        <el-radio-button :label="4">地形因子</el-radio-button>
-        <el-radio-button :label="5">视线分析</el-radio-button>
-        <el-radio-button :label="6">视域分析</el-radio-button>
+        <el-radio-button :label="1">Contour</el-radio-button>
+        <el-radio-button :label="2">Slope</el-radio-button>
+        <el-radio-button :label="3">Aspect</el-radio-button>
+        <el-radio-button :label="4">Factors</el-radio-button>
+        <el-radio-button :label="5">Line-of-sight</el-radio-button>
+        <el-radio-button :label="6">Viewshed</el-radio-button>
       </el-radio-group>
       <!-- <el-row>
         <el-col :span=""></el-col>
@@ -24,7 +24,7 @@
       <!-- 选择绘制类型 -->
       <el-select
         v-model="selectDrawType"
-        placeholder="请选择绘制类型"
+        placeholder="select drawing type"
         class="lx-select"
         @change="dxfxDrawTypeChange"
         @visible-change="dxfxSelectVisibleChange"
@@ -32,7 +32,7 @@
         <el-option
           v-for="item in tempDrawTypeArray"
           :key="item.value"
-          :label="item.label"
+          :label="item.label1"
           :value="item.value"
         >
         </el-option>
@@ -41,7 +41,7 @@
       <div class="intervalBox">
         <el-input
           class="intervalInput"
-          placeholder="请输入等高线间距"
+          placeholder="input contour interval [m]"
           v-model="contourInterval"
           v-show="showInterval"
           clearable
@@ -51,7 +51,7 @@
       <!-- 视域分析 -->
       <div class="viewShedBox" v-show="showViewShed">
         <el-button round icon="el-icon-location" @click="setPoint"
-          >观测点</el-button
+          >Observation Point</el-button
         >
       </div>
       <!-- 绘制开关 -->
@@ -60,8 +60,8 @@
         v-model="isStartDraw"
         active-color="#13ce66"
         inactive-color="#ff4949"
-        active-text="开启绘制"
-        inactive-text="关闭绘制"
+        active-text="open drawing"
+        inactive-text="close drawing"
         class="cl-switch"
         @change="drawSwitchChange"
       >
@@ -74,20 +74,20 @@
           ><i class="el-icon-close" @click="hideLegend"></i
         ></el-col>
         <el-col :span="8">
-          <span style="margin-right: 8px">{{ legendTitle }}</span>
+          <span>{{ legendTitle }}</span>
         </el-col>
         <el-col :span="14">
-          <span style="margin-right: -90px">信息面板</span>
+          <span style="margin-right: -90px">INFORMATION</span>
         </el-col>
       </el-row>
       <el-row>
-        <el-divider content-position="left">分析说明</el-divider>
+        <el-divider content-position="left">Description</el-divider>
         <el-col :span="24">
           <span>{{ dxfxDescription }}</span>
         </el-col>
       </el-row>
-      <el-row>
-        <el-divider content-position="left">图例说明</el-divider>
+      <el-row v-show="dxfxType != 4">
+        <el-divider content-position="left">Legend</el-divider>
         <el-col class="dxfx-legend-tlsm"> </el-col>
       </el-row>
     </div>
@@ -101,20 +101,20 @@
     <!-- 测量 -->
     <div class="cl-control-panel">
       <el-radio-group v-model="measureType">
-        <el-radio :label="1">测距</el-radio>
-        <el-radio :label="2">测面</el-radio>
+        <el-radio :label="1">distance</el-radio>
+        <el-radio :label="2">area</el-radio>
       </el-radio-group>
       <!-- 选择绘制类型 -->
       <el-select
         v-model="selectDrawType"
-        placeholder="请选择绘制类型"
+        placeholder="select drawing type"
         class="lx-select"
         @change="measureDrawTypeChange"
       >
         <el-option
           v-for="item in drawTypeArray"
           :key="item.value"
-          :label="item.label"
+          :label="item.label1"
           :value="item.value"
         >
         </el-option>
@@ -125,8 +125,8 @@
         v-model="isStartDraw"
         active-color="#13ce66"
         inactive-color="#ff4949"
-        active-text="开启绘制"
-        inactive-text="关闭绘制"
+        active-text="open drawing"
+        inactive-text="close drawing"
         class="cl-switch"
         @change="drawSwitchChange"
       >
@@ -172,26 +172,32 @@ export default {
         {
           value: 1,
           label: '点',
+          label1: 'Point',
         },
         {
           value: 2,
           label: '线',
+          label1: 'LineString',
         },
         {
           value: 3,
           label: '圆形',
+          label1: 'Circle',
         },
         {
           value: 4,
           label: '矩形',
+          label1: 'Rectangle',
         },
         {
           value: 5,
           label: '多边形',
+          label1: 'Polygon',
         },
         {
           value: 6,
           label: '自由曲面',
+          label1: 'FreeHand',
         },
       ],
       paramsObj: {},
@@ -344,13 +350,13 @@ export default {
     },
     dxfxSelectVisibleChange(value) {
       value && this.tempDrawTypeArray.length == 0
-        ? this.$message.info('请先选择地形分析类型')
+        ? this.$message.info('Please select terrain analysis type first')
         : ''
     },
     drawSwitchChange() {
       if (this.isStartDraw) {
         !this.selectDrawType
-          ? this.$message.warning('请选择绘制类型')
+          ? this.$message.warning('Please select a drawing type')
           : this.draw(this.selectDrawType)
       } else {
         this.MapObject.removeInteraction(this.drawControl)
@@ -493,7 +499,7 @@ export default {
         this.getGpParamsObj(data)
         gpService(this.dxfxType, this.paramsObj, (res) => {
           if (res) {
-            let fs = this.geoJsonObj.readFeatures(res)
+            let fs = this.dxfxType != 4 ? this.geoJsonObj.readFeatures(res) : ''
             switch (this.dxfxType) {
               case 1:
                 this.showContourRes(fs)
@@ -505,7 +511,7 @@ export default {
                 this.showAspectRes(fs)
                 break
               case 4:
-                // 地形因子
+                this.showFactors(JSON.parse(res))
                 break
               case 5:
                 this.showLineOfSightRes(fs)
@@ -643,10 +649,10 @@ export default {
           let ifViewLine = ''
           if (feature.getProperties().visCode == 2) {
             style.getStroke().setColor([229, 9, 42, 0.5])
-            ifViewLine = '不可见'
+            ifViewLine = 'invisible'
           } else {
             style.getStroke().setColor([25, 234, 20, 0.5])
-            ifViewLine = '可见'
+            ifViewLine = 'visible'
           }
           style.getStroke().setWidth(3)
           style.getText().setText(ifViewLine)
@@ -692,7 +698,7 @@ export default {
       // 添加分析结果到GP图层
       this.addResToLayer(result)
       // 构造图例
-      let pxObj = ['等高线']
+      let pxObj = ['contour']
       var otherColorList = ['orange']
       let tlOptions = new Array()
       for (let k in otherColorList) {
@@ -701,7 +707,7 @@ export default {
           tlOptions.push(o)
         }
       }
-      var tmOptions = { title: '等高线分析', ms: '等高线分析[单位：米]' }
+      var tmOptions = { title: 'Contour', ms: 'Contour Analysis[unit: m]' }
       this.showLegendPanel(tmOptions, tlOptions)
     },
     showSlopeRes(result) {
@@ -729,7 +735,7 @@ export default {
           tlOptions.push(o)
         }
       }
-      var tmOptions = { title: '坡度分析', ms: '坡度分析[单位：度]' }
+      var tmOptions = { title: 'Slope', ms: 'Slope Analysis[unit: degree]' }
       this.showLegendPanel(tmOptions, tlOptions)
     },
     showAspectRes(result) {
@@ -738,15 +744,24 @@ export default {
       let tlOptions = new Array()
       let obj = { start: 1, end: 9 }
       let pxObj = [
-        '北坡',
-        '东北坡',
-        '东坡',
-        '东南坡',
-        '南坡',
-        '西南坡',
-        '西坡',
-        '西北坡',
-        '平坦地区',
+        // '北坡',
+        'north slope',
+        // '东北坡',
+        'northeast slope',
+        // '东坡',
+        'east slope',
+        // '东南坡',
+        'southeast slope',
+        // '南坡',
+        'south slope',
+        // '西南坡',
+        'southwest slope',
+        // '西坡',
+        'west slope',
+        // '西北坡',
+        'northwest slope',
+        // '平坦地区',
+        'flat area',
       ]
       let otherColorList = this.getColorList(obj)
       for (let k in otherColorList) {
@@ -755,13 +770,26 @@ export default {
           tlOptions.push(o)
         }
       }
-      var tmOptions = { title: '坡向分析', ms: '坡向分析按八个方向的方式显示' }
+      var tmOptions = { title: 'Aspect', ms: 'Displayed in eight directions' }
       this.showLegendPanel(tmOptions, tlOptions)
+    },
+    showFactors(result) {
+      this.$notify({
+        title: 'Terrain factors',
+        position: 'bottom-right',
+        dangerouslyUseHTMLString: true,
+        // duration: 0,
+        message: `
+        <div>Dem: ${result.dem}</div>
+        <div>Slope: ${result.slope}</div>
+        <div>Aspect: ${result.aspect}</div>
+        `, //`<strong>这是 <i>HTML</i> 片段</strong>`,
+      })
     },
     showLineOfSightRes(result) {
       this.addResToLayer(result)
       let tlOptions = new Array()
-      let pxObj = ['可见', '不可见']
+      let pxObj = ['visible', 'invisible']
       let otherColorList = ['green', 'red']
       for (let k in otherColorList) {
         if (k != 'unique') {
@@ -769,7 +797,7 @@ export default {
           tlOptions.push(o)
         }
       }
-      var tmOptions = { title: '视线分析', ms: '视线分析' }
+      var tmOptions = { title: 'Line-of-sight', ms: 'Line-of-sight Analysis' }
       this.showLegendPanel(tmOptions, tlOptions)
     },
     showViewShedRes(result) {
@@ -778,7 +806,7 @@ export default {
       this.showObservePoint()
       // 构造图例
       let tlOptions = new Array()
-      let pxObj = ['可见', '不可见']
+      let pxObj = ['visible', 'invisible']
       let otherColorList = ['green', 'red']
       for (let k in otherColorList) {
         if (k != 'unique') {
@@ -786,7 +814,7 @@ export default {
           tlOptions.push(o)
         }
       }
-      var tmOptions = { title: '视域分析', ms: '视域分析' }
+      var tmOptions = { title: 'Viewshed', ms: 'Viewshed Analysis' }
       this.showLegendPanel(tmOptions, tlOptions)
     },
     showObservePoint() {
@@ -845,7 +873,7 @@ export default {
   position: absolute;
   right: 20px;
   top: 20px;
-  width: 300px;
+  // width: 300px;
 }
 .toolBarBox {
   box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.3);
@@ -880,8 +908,10 @@ export default {
 }
 .intervalBox {
   width: 220px;
-  padding-left: 40px;
-  padding-top: 15px;
+  // padding-left: 40px;
+  // padding-top: 15px;
+  margin-left: 72px;
+  margin-top: 10px;
 }
 .viewShedBox {
   margin-top: 15px;
@@ -889,7 +919,7 @@ export default {
 .dxfx-legend-panel {
   padding: 10px;
   position: absolute;
-  width: 280px;
+  width: 340px;//280px;
   bottom: -760px;
   right: 0;
   background: rgba($color: #ffffff, $alpha: 0.9);

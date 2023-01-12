@@ -1,13 +1,16 @@
 <template>
   <div id="wrapBox">
     <div id="mousePosition">
-      <div id="mouse-position">十进制：</div>
-      <div id="mouse-position2">经纬度：</div>
+      <!-- <div id="mouse-position">十进制：</div> -->
+      <div id="mouse-position">decimal:&nbsp;</div>
+      <!-- <div id="mouse-position2">经纬度：</div> -->
+      <div id="mouse-position2">coordinate:&nbsp;</div>
     </div>
     <div id="scaleLine">
       <span id="scaleWrapper" style="display: none">
-        比例尺(km)&nbsp;1:&nbsp;
-        <span id="scale" style="display: inline-block" />
+        <!-- 比例尺(km)&nbsp;1:&nbsp; -->
+        scale:&nbsp;1:&nbsp;
+        <span id="scale" style="display: inline-block" />&nbsp;km
       </span>
     </div>
   </div>

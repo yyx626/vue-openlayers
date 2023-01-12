@@ -81,7 +81,7 @@ export function gpService(type, paramsObj, callBack) {
     dataType: 'json',
     data: _paramsObj,
     beforeSend: () => {
-      createLoading('正在分析')
+      createLoading('analysing')
     },
     complete: function () {
       loading.close();
