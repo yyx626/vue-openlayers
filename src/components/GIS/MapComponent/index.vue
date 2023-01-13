@@ -53,7 +53,7 @@ export default {
       // 矢量底图
       this.vecLayer = new TileLayer({
         source: new XYZ({
-          url: `${MapConfig.baseURL}&T=${MapConfig.type.vecLayer}&tk=${MapConfig.tdtKey}`,
+          url: MapConfig.tdtVecUrl,
           projection: MapConfig.projection,
           wrapX: false,
         }),
@@ -62,7 +62,7 @@ export default {
       // 影像底图
       this.imgLayer = new TileLayer({
         source: new XYZ({
-          url: `${MapConfig.baseURL}&T=${MapConfig.type.imgLayer}&tk=${MapConfig.tdtKey}`,
+          url: MapConfig.tdtImgUrl,
           projection: MapConfig.projection,
           wrapX: false,
         }),
@@ -71,7 +71,7 @@ export default {
       // 矢量注记
       this.cvaLayer = new TileLayer({
         source: new XYZ({
-          url: `${MapConfig.baseURL}&T=${MapConfig.type.cvaLayer}&tk=${MapConfig.tdtKey}`,
+          url: MapConfig.tdtCvaUrl,
           projection: MapConfig.projection,
           wrapX: false,
         }),
@@ -80,7 +80,7 @@ export default {
       // 影像注记
       this.ciaLayer = new TileLayer({
         source: new XYZ({
-          url: `${MapConfig.baseURL}&T=${MapConfig.type.ciaLayer}&tk=${MapConfig.tdtKey}`,
+          url: MapConfig.tdtCiaUrl,
           projection: MapConfig.projection,
           wrapX: false,
         }),
