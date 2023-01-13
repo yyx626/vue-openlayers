@@ -628,7 +628,15 @@ export default {
         if (geom instanceof LineString) {
           clRes = this.formatLength(geom)
         }
-        $('.clResBox').html(`Measure Result: ${clRes}`)
+        $('.clResBox').html(
+          `${
+            this.formatType == 1
+              ? 'Spherical'
+              : this.formatType == 2
+              ? 'Plane'
+              : ''
+          } Measure Result: ${clRes}`
+        )
         data.feature.setStyle(
           new Style({
             fill: new Fill({
