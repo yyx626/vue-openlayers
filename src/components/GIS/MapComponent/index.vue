@@ -1,12 +1,19 @@
 <template>
-  <div id="map" @contextmenu.prevent="" @mousedown.right="mouseDownRightEvent($event)">
+  <div
+    id="map"
+    @contextmenu.prevent=""
+    @mousedown.right="mouseDownRightEvent($event)"
+  >
     <!-- 鼠标经纬度及比例尺 -->
     <mouse-position></mouse-position>
     <!-- 图层切换 -->
     <layer-manage v-if="!hideLayerControl"></layer-manage>
     <!-- 右上工具条 -->
     <tool-bar ref="toolBarChild"></tool-bar>
-    <!-- <route-analysis :visible="isOpenMenu" ref="child"></route-analysis> -->
+    <!-- 路网相关 -->
+    <route-analysis></route-analysis>
+    <!-- 右键菜单 -->
+    <context-menu v-show="showContextMenu" ref="menuChild"></context-menu>
   </div>
 </template>
 
@@ -22,8 +29,15 @@ import LayerManage from '@/components/GIS/LayerManage'
 import MousePosition from '@/components/GIS/MousePosition'
 import ToolBar from '@/components/GIS/ToolBar'
 import RouteAnalysis from '@/components/GIS/RouteAnalysis'
+import ContextMenu from '@/components/GIS/ContextMenu'
 export default {
-  components: { LayerManage, MousePosition, ToolBar, RouteAnalysis },
+  components: {
+    LayerManage,
+    MousePosition,
+    ToolBar,
+    RouteAnalysis,
+    ContextMenu,
+  },
   name: 'MapComponent',
   props: ['currentMap', 'hideLayerControl'],
   data() {
@@ -34,7 +48,7 @@ export default {
       ciaLayer: null,
       MapObject: null,
       mapType: this.currentMap,
-      isOpenMenu: false,
+      showContextMenu: false,
     }
   },
   computed: {
@@ -116,11 +130,24 @@ export default {
         this.ciaLayer.setVisible(true)
       }
     },
+    // 地图右键事件
     mouseDownRightEvent(e) {
-      if(this.$refs.toolBarChild.isStartDraw){
+      if (this.$refs.toolBarChild.isStartDraw) {
         this.$refs.toolBarChild.handleDrawing(false)
-      }else{
-
+      } else {
+        this.showContextMenu = true
+        this.$refs.menuChild.left = e.pageX
+        this.$refs.menuChild.top = e.pageY
+        this.$refs.menuChild.menuListArr[0] = `${this.MapObject.getCoordinateFromPixel(
+          [e.pageX, e.pageY]
+        )[0].toFixed(5)}, ${this.MapObject.getCoordinateFromPixel([
+          e.pageX,
+          e.pageY,
+        ])[1].toFixed(5)}`
+        this.$refs.menuChild.tempPoint = this.MapObject.getCoordinateFromPixel([
+          e.pageX,
+          e.pageY,
+        ]).map((item) => item.toFixed(5))
       }
     },
     // 地图单击事件入口
@@ -129,9 +156,34 @@ export default {
         func(e)
       })
     },
+    // 地图双击事件入口
+    mapDbClick(func) {
+      this.MapObject.on('dblclick', (e) => {
+        func(e)
+      })
+    },
     // 地图鼠标移动事件入口
-    mapPointermove(func){
-      this.MapObject.on('pointermove',(e)=>{
+    mapPointermove(func) {
+      this.MapObject.on('pointermove', (e) => {
+        func(e)
+      })
+    },
+    // 地图鼠标拖拽事件
+    mapDrag(func) {
+      this.MapObject.on('pointerdrag', (e) => {
+        document.querySelector('body').style.cursor = 'move'
+        func(e)
+      })
+    },
+    mapMoveStart(func) {
+      this.MapObject.on('movestart', (e) => {
+        document.querySelector('body').style.cursor = 'move'
+        func(e)
+      })
+    },
+    mapMoveEnd(func) {
+      this.MapObject.on('moveend', (e) => {
+        document.querySelector('body').style.cursor = 'default'
         func(e)
       })
     },
@@ -140,9 +192,7 @@ export default {
       this.mapType = newValue
     },
     // 事件回调函数
-    callBack(type, param) {
-
-    },
+    callBack(type, param) {},
   },
   mounted() {
     this.initMap()

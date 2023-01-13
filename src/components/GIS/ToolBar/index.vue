@@ -494,6 +494,7 @@ export default {
         this.drawControl = new Draw({
           source: this.layer.getSource(),
           type: lx,
+          stopClick: true,
           style:
             this.currentTool == 1
               ? this.getStyle(type)
