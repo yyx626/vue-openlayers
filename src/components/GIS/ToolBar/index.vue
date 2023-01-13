@@ -6,7 +6,7 @@
         >Terrain analysis</el-button
       >
       <el-button icon="el-icon-edit" @click="showPanel(2)">Measure</el-button>
-      <el-button icon="el-icon-delete" @click="clear">clear</el-button>
+      <el-button icon="el-icon-delete" @click="clear">Clear</el-button>
     </el-button-group>
 
     <!-- 地形分析 -->
