@@ -1,11 +1,12 @@
 <template>
-  <div id="map">
+  <div id="map" @contextmenu.prevent="" @mousedown.right="mouseDownRightEvent($event)">
     <!-- 鼠标经纬度及比例尺 -->
     <mouse-position></mouse-position>
     <!-- 图层切换 -->
     <layer-manage v-if="!hideLayerControl"></layer-manage>
     <!-- 右上工具条 -->
-    <tool-bar></tool-bar>
+    <tool-bar ref="toolBarChild"></tool-bar>
+    <!-- <route-analysis :visible="isOpenMenu" ref="child"></route-analysis> -->
   </div>
 </template>
 
@@ -20,8 +21,9 @@ import MapConfig from '@/config/MapConfig.js'
 import LayerManage from '@/components/GIS/LayerManage'
 import MousePosition from '@/components/GIS/MousePosition'
 import ToolBar from '@/components/GIS/ToolBar'
+import RouteAnalysis from '@/components/GIS/RouteAnalysis'
 export default {
-  components: { LayerManage, MousePosition, ToolBar },
+  components: { LayerManage, MousePosition, ToolBar, RouteAnalysis },
   name: 'MapComponent',
   props: ['currentMap', 'hideLayerControl'],
   data() {
@@ -32,6 +34,7 @@ export default {
       ciaLayer: null,
       MapObject: null,
       mapType: this.currentMap,
+      isOpenMenu: false,
     }
   },
   computed: {
@@ -113,9 +116,22 @@ export default {
         this.ciaLayer.setVisible(true)
       }
     },
+    mouseDownRightEvent(e) {
+      if(this.$refs.toolBarChild.isStartDraw){
+        this.$refs.toolBarChild.handleDrawing(false)
+      }else{
+
+      }
+    },
     // 地图单击事件入口
     mapClick(func) {
       this.MapObject.on('singleclick', (e) => {
+        func(e)
+      })
+    },
+    // 地图鼠标移动事件入口
+    mapPointermove(func){
+      this.MapObject.on('pointermove',(e)=>{
         func(e)
       })
     },
@@ -125,10 +141,7 @@ export default {
     },
     // 事件回调函数
     callBack(type, param) {
-      // 绘制图形结束回调
-      type == 'drawend' && this.$parent.drawCallBack
-        ? this.$parent.drawCallBack(param)
-        : ''
+
     },
   },
   mounted() {

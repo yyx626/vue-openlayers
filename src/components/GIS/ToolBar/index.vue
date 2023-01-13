@@ -21,9 +21,7 @@
         <el-radio-button :label="5">Line-of-sight</el-radio-button>
         <el-radio-button :label="6">Viewshed</el-radio-button>
       </el-radio-group>
-      <!-- <el-row>
-        <el-col :span=""></el-col>
-      </el-row> -->
+
       <!-- 选择绘制类型 -->
       <el-select
         v-model="selectDrawType"
@@ -103,9 +101,27 @@
     ></el-button>
     <!-- 测量 -->
     <div class="cl-control-panel">
-      <el-radio-group v-model="measureType">
+      <el-radio-group v-model="measureType" @change="clTypeChange">
         <el-radio :label="1">distance</el-radio>
         <el-radio :label="2">area</el-radio>
+      </el-radio-group>
+      <el-radio-group
+        v-model="formatType"
+        v-show="showClFormatTypeRadio"
+        style="margin-top: 10px"
+      >
+        <el-radio :label="1"
+          >spherical
+          {{
+            measureType ? (measureType == 1 ? 'distance' : 'area') : ''
+          }}</el-radio
+        >
+        <el-radio :label="2"
+          >plane
+          {{
+            measureType ? (measureType == 1 ? 'distance' : 'area') : ''
+          }}</el-radio
+        >
       </el-radio-group>
       <!-- 选择绘制类型 -->
       <el-select
@@ -115,7 +131,7 @@
         @change="measureDrawTypeChange"
       >
         <el-option
-          v-for="item in drawTypeArray"
+          v-for="item in tempClDrawTypeArray"
           :key="item.value"
           :label="item.label1"
           :value="item.value"
@@ -134,6 +150,7 @@
         @change="drawSwitchChange"
       >
       </el-switch>
+      <div class="clResBox" style="margin-top: 10px"></div>
     </div>
   </div>
 </template>
@@ -142,17 +159,41 @@
 import $ from 'jquery'
 import VectorLayer from 'ol/layer/Vector'
 import VectorSource from 'ol/source/Vector'
-import { Style, Icon, Stroke, Fill, Text } from 'ol/style'
+import {
+  Circle as CircleStyle,
+  Style,
+  Icon,
+  Stroke,
+  Fill,
+  Text,
+} from 'ol/style'
 import { Draw } from 'ol/interaction'
 import { unByKey } from 'ol/Observable'
 import { createBox, createRegularPolygon } from 'ol/interaction/Draw'
+import { LineString, Polygon } from 'ol/geom'
+import { getArea, getLength } from 'ol/sphere'
 import GeoJSON from 'ol/format/GeoJSON'
 import { gpService } from '@/api/gpService'
+
 export default {
   name: 'ToolBar',
   watch: {
     currentTool(current, old) {
+      this.selectDrawType = null
+      this.MapObject.removeInteraction(this.drawControl)
       old ? this.hidePanel(old) : ''
+    },
+    measureType(current, old) {
+      if (current == 1) {
+        this.tempClDrawTypeArray = this.drawTypeArray.filter(
+          (item) => item.value == 2
+        )
+      }
+      if (current == 2) {
+        this.tempClDrawTypeArray = this.drawTypeArray.filter(
+          (item) => item.value > 2
+        )
+      }
     },
   },
   data() {
@@ -162,15 +203,19 @@ export default {
       layer: null,
       gpSource: null,
       gpLayer: null,
-      measureType: 1,
+      measureType: null,
+      formatType: 1,
+      showClFormatTypeRadio: false,
       dxfxType: null,
       showViewShed: false,
       showInterval: false,
-      isStartDraw: true,
+      isStartDraw: false,
+      measureDrawState: null,
       contourInterval: null,
       pointFeatureArray: [],
       viewShedFeatureArray: [],
       tempDrawTypeArray: [],
+      tempClDrawTypeArray: [],
       drawTypeArray: [
         {
           value: 1,
@@ -209,7 +254,6 @@ export default {
       drawControl: null,
       sketch: null,
       drawRes: {},
-      listener: null,
       clearLast: false,
       geoJsonObj: new GeoJSON(),
       gpStyles: {
@@ -265,6 +309,26 @@ export default {
       },
       legendTitle: null,
       dxfxDescription: null,
+      // 测量
+      measureDrawStyle: new Style({
+        fill: new Fill({
+          color: 'rgba(255, 255, 255, 0.2)',
+        }),
+        stroke: new Stroke({
+          color: 'rgba(0, 0, 0, 0.5)',
+          lineDash: [10, 10],
+          width: 2,
+        }),
+        image: new CircleStyle({
+          radius: 5,
+          stroke: new Stroke({
+            color: 'rgba(0, 0, 0, 0.7)',
+          }),
+          fill: new Fill({
+            color: 'rgba(255, 255, 255, 0.2)',
+          }),
+        }),
+      }),
     }
   },
   methods: {
@@ -278,6 +342,7 @@ export default {
           },
         })
         this.MapObject.addLayer(this.layer)
+        this.initMapEvent()
       }, 100)
     },
     hidePanel(type) {
@@ -347,7 +412,13 @@ export default {
       this.drawControl ? this.MapObject.removeInteraction(this.drawControl) : ''
       this.setDxfxDrawType(this.dxfxType)
     },
+    clTypeChange() {
+      this.showClFormatTypeRadio = true
+      this.selectDrawType = null
+      this.drawControl ? this.MapObject.removeInteraction(this.drawControl) : ''
+    },
     measureDrawTypeChange() {
+      this.isStartDraw = true
       if (this.selectDrawType && this.isStartDraw) {
         this.draw(this.selectDrawType)
       }
@@ -370,6 +441,12 @@ export default {
           : this.draw(this.selectDrawType)
       } else {
         this.MapObject.removeInteraction(this.drawControl)
+      }
+    },
+    handleDrawing(isOpen) {
+      if (this.isStartDraw && !isOpen) {
+        this.MapObject.removeInteraction(this.drawControl)
+        this.isStartDraw = false
       }
     },
     setPoint() {
@@ -417,21 +494,30 @@ export default {
         this.drawControl = new Draw({
           source: this.layer.getSource(),
           type: lx,
-          style: this.getStyle(type),
+          style:
+            this.currentTool == 1
+              ? this.getStyle(type)
+              : this.currentTool == 2
+              ? this.measureDrawStyle
+              : '',
           freehand: type == 6 ? true : false,
           geometryFunction:
             type == 4 ? createBox() : type == 3 ? createRegularPolygon(0) : '',
           maxPoints: type == 2 && this.currentTool == 1 ? 2 : '',
         })
         this.MapObject.addInteraction(this.drawControl)
+
+        let listener
         this.drawControl.on('drawstart', (evt) => {
+          this.measureDrawState = true
           this.sketch = evt.feature
-          this.listener = this.sketch.getGeometry().on('change', (evt) => {
+          listener = this.sketch.getGeometry().on('change', (evt) => {
             const geom = evt.target
             let output
           })
         })
         this.drawControl.on('drawend', (evt) => {
+          this.measureDrawState = false
           // 视域分析观察点
           if (this.showViewShed && type == 1) {
             this.pointFeatureArray.push(evt.feature)
@@ -450,14 +536,11 @@ export default {
           }
           this.drawRes.feature = evt.feature
           this.drawRes.geoJson = this.geoJsonObj.writeFeatures([evt.feature])
-          evt.feature.setStyle(this.getStyle(type))
           this.isStartDraw
             ? ''
             : this.MapObject.removeInteraction(this.drawControl)
           this.sketch = null
-          unByKey(this.listener)
-          // resolve(this.drawRes)
-          // resolve(this.$parent.callBack('drawend', this.drawRes))
+          unByKey(listener)
           resolve(this.drawCallBack(this.drawRes))
         })
         // this.modify.on('modifyend', (evt) => {
@@ -506,6 +589,7 @@ export default {
     },
     drawCallBack(data) {
       if (this.currentTool == 1) {
+        data.feature.setStyle(this.getStyle(this.drawType))
         this.getGpParamsObj(data)
         gpService(this.dxfxType, this.paramsObj, (res) => {
           if (res) {
@@ -535,7 +619,50 @@ export default {
           }
         })
       } else if (this.currentTool == 2) {
+        let clRes
         // 测量
+        let geom = data.feature.getGeometry()
+        if (geom instanceof Polygon) {
+          clRes = this.formatArea(geom)
+        }
+        if (geom instanceof LineString) {
+          clRes = this.formatLength(geom)
+        }
+        $('.clResBox').html(`Measure Result: ${clRes}`)
+        data.feature.setStyle(
+          new Style({
+            fill: new Fill({
+              color: 'rgba(255, 255, 255, 0.2)',
+            }),
+            stroke: new Stroke({
+              color: '#ffcc33',
+              width: 2,
+            }),
+            image: new CircleStyle({
+              radius: 7,
+              stroke: new Stroke({
+                color: '#ffcc33',
+              }),
+              fill: new Fill({
+                color: '#ffcc33',
+              }),
+            }),
+            text: new Text({
+              font: '14px 微软雅黑 bold',
+              offsetX: 0,
+              offsetY: 0,
+              textAlign: 'center',
+              text: clRes,
+              fill: new Fill({
+                color: 'black',
+              }),
+              backgroundFill: new Fill({
+                color: 'rgb(255, 204, 51)',
+              }),
+              padding: [5, 5, 3, 5],
+            }),
+          })
+        )
       }
     },
     addResToLayer(result) {
@@ -868,7 +995,53 @@ export default {
         $('.dxfx-legend-tlsm').append(divStr)
       })
     },
-    measure() {},
+    // 测量
+    pointerMoveHandler(evt) {
+      if (evt.dragging) {
+        return
+      }
+    },
+    initMapEvent() {
+      this.$parent.mapPointermove(this.pointerMoveHandler)
+    },
+    formatLength(line) {
+      var sourceproj = this.MapObject.getView().getProjection()
+      let length
+      if (this.formatType == 1) {
+        length = getLength(line, {
+          projection: sourceproj,
+        })
+      }
+      if (this.formatType == 2) {
+        length = line.getLength() * 100000
+      }
+      let output
+      if (length > 1000) {
+        output = Math.round((length / 1000) * 100) / 100 + ' ' + 'km'
+      } else {
+        output = Math.round(length * 100) / 100 + ' ' + 'm'
+      }
+      return output
+    },
+    formatArea(polygon) {
+      var sourceproj = this.MapObject.getView().getProjection()
+      let area
+      if (this.formatType == 1) {
+        area = getArea(polygon, {
+          projection: sourceproj,
+        })
+      }
+      if (this.formatType == 2) {
+        area = polygon.getArea() * 10000000000
+      }
+      let output
+      if (area > 10000) {
+        output = Math.round((area / 1000000) * 100) / 100 + ' ' + 'km²'
+      } else {
+        output = Math.round(area * 100) / 100 + ' ' + 'm²'
+      }
+      return output
+    },
   },
   mounted() {
     this.init()
@@ -947,5 +1120,41 @@ export default {
 }
 .el-icon-close {
   cursor: pointer;
+}
+// measure
+.ol-tooltip {
+  position: relative;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  color: white;
+  padding: 4px 8px;
+  opacity: 0.7;
+  white-space: nowrap;
+  font-size: 12px;
+  cursor: default;
+  user-select: none;
+}
+.ol-tooltip-measure {
+  opacity: 1;
+  font-weight: bold;
+}
+.ol-tooltip-static {
+  background-color: #ffcc33;
+  color: black;
+  border: 1px solid white;
+}
+.ol-tooltip-measure:before,
+.ol-tooltip-static:before {
+  border-top: 6px solid rgba(0, 0, 0, 0.5);
+  border-right: 6px solid transparent;
+  border-left: 6px solid transparent;
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  margin-left: -7px;
+  left: 50%;
+}
+.ol-tooltip-static:before {
+  border-top-color: rgb(255, 204, 51);
 }
 </style>
