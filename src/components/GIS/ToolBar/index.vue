@@ -512,8 +512,25 @@ export default {
           this.measureDrawState = true
           this.sketch = evt.feature
           listener = this.sketch.getGeometry().on('change', (evt) => {
-            const geom = evt.target
-            let output
+            let geom = evt.target
+            if (this.currentTool == 2) {
+              let clRes
+              if (geom instanceof Polygon) {
+                clRes = this.formatArea(geom)
+              }
+              if (geom instanceof LineString) {
+                clRes = this.formatLength(geom)
+              }
+              $('.clResBox').html(
+                `${
+                  this.formatType == 1
+                    ? 'Spherical'
+                    : this.formatType == 2
+                    ? 'Plane'
+                    : ''
+                } Measure Result: ${clRes}`
+              )
+            }
           })
         })
         this.drawControl.on('drawend', (evt) => {
