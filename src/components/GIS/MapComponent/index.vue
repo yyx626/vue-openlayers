@@ -208,7 +208,7 @@ export default {
   height: 100%;
   /* z-index: 5; */
   position: absolute;
-  left: 0;
-  top: 0;
+  /* left: 0; */
+  /* top: 0; */
 }
 </style>
