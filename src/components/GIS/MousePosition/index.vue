@@ -115,7 +115,7 @@ export default {
 
 <style scoped>
 #wrapBox {
-  z-index: 5;
+  z-index: 2;
   position: absolute;
   bottom: 10px;
   left: 20px;

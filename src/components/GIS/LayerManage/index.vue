@@ -132,7 +132,7 @@ export default {
   position: absolute;
   left: 20px;
   top: 20px;
-  z-index: 200;
+  z-index: 2;
   cursor: pointer;
   .layer-btn {
     font-size: 30px;
