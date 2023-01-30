@@ -11,7 +11,7 @@
     <!-- 右上工具条 -->
     <tool-bar ref="toolBarChild"></tool-bar>
     <!-- 路网相关 -->
-    <route-analysis></route-analysis>
+    <route-analysis ref="routeChild"></route-analysis>
     <!-- 右键菜单 -->
     <context-menu v-show="showContextMenu" ref="menuChild"></context-menu>
   </div>
