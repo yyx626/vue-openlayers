@@ -10,6 +10,7 @@ module.exports = defineConfig({
   configureWebpack: {
     devtool: 'source-map'
   },
-  transpileDependencies: true
+  transpileDependencies: true,
+  publicPath:'./' // 项目构建
 })
 
